@@ -1,0 +1,5 @@
+name: conceptual-mathematics
+include:
+  src
+depend:
+  standard-library
