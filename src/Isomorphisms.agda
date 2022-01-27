@@ -4,7 +4,7 @@ open import Function
 open import Data.Empty
 open import Data.Product
 import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; refl; cong; sym)
+open Eq using (_≡_; refl; cong; sym; trans)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _∎; step-≡)
 open import Function.Reasoning
 
@@ -160,22 +160,22 @@ invalidIsoCancellation eq
   with (eq {Bool} {const true} {const false} {true} counterExample refl)
 ... | ()
 
-record Retraction { A B : Set } (f : A -> B) : Set where
+record HasRetract { A B : Set } (f : A -> B) : Set where
   field
     r : B → A
     retEq : r ∘ f ≡ id {A = A}
 
-record Section { A B : Set } (f : A -> B) : Set where
+record HasSection { A B : Set } (f : A -> B) : Set where
   field
     s : B → A
     secEq : f ∘ s ≡ id {A = B}
 
 choiceForEverySection :
   {A B : Set} -> {f : A -> B} ->
-  Section f ->
+  HasSection f ->
   ∀ {T : Set} -> (y : T -> B) -> Σ (T -> A) (λ (x : T -> A) -> f ∘ x ≡ y)
 choiceForEverySection {f = f} section {T} y =
-  let open Section section
+  let open HasSection section
       sec = s
       secEq = secEq
   in s ∘ y ,(
@@ -189,10 +189,10 @@ choiceForEverySection {f = f} section {T} y =
 
 determinationForEveryRetraction :
   {A B : Set} -> {f : A -> B} ->
-  Retraction f ->
+  HasRetract f ->
   ∀ {T : Set} -> (y : A -> T) -> Σ (B -> T) (λ (x : B -> T) -> x ∘ f ≡ y)
 determinationForEveryRetraction {f = f} ret {T} y =
-  let open Retraction ret
+  let open HasRetract ret
       r' = r
       retEq = retEq
   in y ∘ r , (
@@ -207,19 +207,58 @@ determinationForEveryRetraction {f = f} ret {T} y =
 
 monomorphicChoice :
   {A B : Set} -> {f : A -> B} ->
-  Retraction f ->
+  HasRetract f ->
   (∀ {T : Set} -> {x1 x2 : T -> A} -> (f ∘ x1 ≡ f ∘ x2) -> x1 ≡ x2)
-monomorphicChoice {f = f} ret {x1 = x1} {x2 = x2} eq =
-  let open Retraction ret
+monomorphicChoice {f = f} retF {x1 = x1} {x2 = x2} eq =
+  let open HasRetract retF
       r = r
       retEq = retEq
   in
-      begin
-      x1
-      ≡⟨ sym (cong (_∘ x1) retEq)⟩
-      r ∘ (f ∘ x1)
-      ≡⟨ cong (r ∘_) eq ⟩
-      r ∘ (f ∘ x2)
-      ≡⟨ cong (_∘ x2) retEq ⟩
-      x2
-      ∎
+  begin
+  x1
+  ≡⟨ sym $ cong (_∘ x1) retEq ⟩
+  (r ∘ f) ∘ x1
+  ≡⟨ cong (r ∘_) eq ⟩
+  (r ∘ f) ∘ x2
+  ≡⟨ cong (_∘ x2) retEq ⟩
+  x2
+  ∎
+
+epimorphicDetermination :
+  {A B : Set} -> {f : A -> B} ->
+  HasSection f ->
+  (∀ {T : Set} -> {t1 t2 : B -> T} -> (t1 ∘ f ≡ t2 ∘ f) -> t1 ≡ t2)
+epimorphicDetermination {f = f} secF {t1 = t1} {t2 = t2} eq =
+  let open HasSection secF
+      s = s
+      secEq = secEq
+  in
+  begin
+  t1
+  ≡⟨ sym $ cong (t1 ∘_) secEq ⟩
+  t1 ∘ (f ∘ s)
+  ≡⟨ cong (_∘ s) eq ⟩
+  (t2 ∘ f) ∘ s
+  ≡⟨ cong (t2 ∘_) secEq ⟩
+  t2
+  ∎
+
+retractionComposition :
+  {A B C : Set} -> {f : A -> B} -> {g : B -> C} ->
+  HasRetract f ->
+  HasRetract g ->
+  HasRetract (g ∘ f)
+retractionComposition {f = f} record { r = r₁ ; retEq = retEq₁ } record { r = r ; retEq = retEq } =
+  record
+    { r = r₁ ∘ r ; retEq = trans (cong (λ z → r₁ ∘ z ∘ f) retEq) retEq₁ }
+
+record Idempotent {A : Set } (e : A -> A) : Set where
+  field
+    idempotentProof : e ∘ e ≡ e
+
+idempotentSplit :
+  {A B : Set} -> {s : A -> B} -> {r : B -> A} ->
+  s ∘ r ≡ id ->
+  Idempotent (s ∘ r)
+idempotentSplit {s = s} {r = r} proof rewrite proof =
+  record { idempotentProof = refl }
