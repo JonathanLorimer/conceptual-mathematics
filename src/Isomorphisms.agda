@@ -160,24 +160,34 @@ invalidIsoCancellation eq
   with (eq {Bool} {const true} {const false} {true} counterExample refl)
 ... | ()
 
-record Retraction { A B : Set } (f : A -> B) : Set where
-  field
-    r : B → A
-    retEq : r ∘ f ≡ id {A = A}
 
-record Section { A B : Set } (f : A -> B) : Set where
+record Determination {A B C : Set} (h : A -> C) (f : A -> B) : Set where
+  constructor determines
   field
-    s : B → A
-    secEq : f ∘ s ≡ id {A = B}
+    r : B -> C
+    determination-proof : r ∘ f ≡ h
+
+Retraction : {A B : Set} (f : A -> B) -> Set
+Retraction = Determination id
+
+
+record Choice {A B C : Set} (h : A -> C) (g : B -> C) : Set where
+  constructor chooses
+  field
+    s : A -> B
+    section-proof : g ∘ s ≡ h
+
+Section : {A B : Set} (f : A -> B) -> Set
+Section = Choice id
 
 choiceForEverySection :
   {A B : Set} -> {f : A -> B} ->
   Section f ->
   ∀ {T : Set} -> (y : T -> B) -> Σ (T -> A) (λ (x : T -> A) -> f ∘ x ≡ y)
 choiceForEverySection {f = f} section {T} y =
-  let open Section section
+  let open Choice section
       sec = s
-      secEq = secEq
+      secEq = section-proof
   in s ∘ y ,(
         begin
         f ∘ (s ∘ y)
@@ -192,9 +202,9 @@ determinationForEveryRetraction :
   Retraction f ->
   ∀ {T : Set} -> (y : A -> T) -> Σ (B -> T) (λ (x : B -> T) -> x ∘ f ≡ y)
 determinationForEveryRetraction {f = f} ret {T} y =
-  let open Retraction ret
+  let open Determination ret
       r' = r
-      retEq = retEq
+      retEq = determination-proof
   in y ∘ r , (
        begin
        (y ∘ r) ∘ f
@@ -210,9 +220,9 @@ monomorphicChoice :
   Retraction f ->
   (∀ {T : Set} -> {x1 x2 : T -> A} -> (f ∘ x1 ≡ f ∘ x2) -> x1 ≡ x2)
 monomorphicChoice {f = f} ret {x1 = x1} {x2 = x2} eq =
-  let open Retraction ret
+  let open Determination ret
       r = r
-      retEq = retEq
+      retEq = determination-proof
   in
       begin
       x1
