@@ -160,24 +160,33 @@ invalidIsoCancellation eq
   with (eq {Bool} {const true} {const false} {true} counterExample refl)
 ... | ()
 
-record HasRetract { A B : Set } (f : A -> B) : Set where
-  field
-    r : B → A
-    retEq : r ∘ f ≡ id {A = A}
 
-record HasSection { A B : Set } (f : A -> B) : Set where
+record Determination {A B C : Set} (h : A -> C) (f : A -> B) : Set where
+  constructor determines
   field
-    s : B → A
-    secEq : f ∘ s ≡ id {A = B}
+    r : B -> C
+    determinationProof : r ∘ f ≡ h
+
+HasRetract : {A B : Set} (f : A -> B) -> Set
+HasRetract = Determination id
+
+record Choice {A B C : Set} (h : A -> C) (g : B -> C) : Set where
+  constructor chooses
+  field
+    s : A -> B
+    choiceProof : g ∘ s ≡ h
+
+HasSection : {A B : Set} (f : A -> B) -> Set
+HasSection = Choice id
 
 choiceForEverySection :
   {A B : Set} -> {f : A -> B} ->
   HasSection f ->
   ∀ {T : Set} -> (y : T -> B) -> Σ (T -> A) (λ (x : T -> A) -> f ∘ x ≡ y)
 choiceForEverySection {f = f} section {T} y =
-  let open HasSection section
+  let open Choice section
       sec = s
-      secEq = secEq
+      secEq = choiceProof
   in s ∘ y ,(
         begin
         f ∘ (s ∘ y)
@@ -192,9 +201,9 @@ determinationForEveryRetraction :
   HasRetract f ->
   ∀ {T : Set} -> (y : A -> T) -> Σ (B -> T) (λ (x : B -> T) -> x ∘ f ≡ y)
 determinationForEveryRetraction {f = f} ret {T} y =
-  let open HasRetract ret
+  let open Determination ret
       r' = r
-      retEq = retEq
+      retEq = determinationProof
   in y ∘ r , (
        begin
        (y ∘ r) ∘ f
@@ -210,9 +219,9 @@ monomorphicChoice :
   HasRetract f ->
   (∀ {T : Set} -> {x1 x2 : T -> A} -> (f ∘ x1 ≡ f ∘ x2) -> x1 ≡ x2)
 monomorphicChoice {f = f} retF {x1 = x1} {x2 = x2} eq =
-  let open HasRetract retF
+  let open Determination retF
       r = r
-      retEq = retEq
+      retEq = determinationProof
   in
   begin
   x1
@@ -229,9 +238,9 @@ epimorphicDetermination :
   HasSection f ->
   (∀ {T : Set} -> {t1 t2 : B -> T} -> (t1 ∘ f ≡ t2 ∘ f) -> t1 ≡ t2)
 epimorphicDetermination {f = f} secF {t1 = t1} {t2 = t2} eq =
-  let open HasSection secF
+  let open Choice secF
       s = s
-      secEq = secEq
+      secEq = choiceProof
   in
   begin
   t1
@@ -248,9 +257,9 @@ retractionComposition :
   HasRetract f ->
   HasRetract g ->
   HasRetract (g ∘ f)
-retractionComposition {f = f} record { r = r₁ ; retEq = retEq₁ } record { r = r ; retEq = retEq } =
+retractionComposition {f = f} record { r = r₁ ; determinationProof = retEq₁ } record { r = r ; determinationProof = retEq } =
   record
-    { r = r₁ ∘ r ; retEq = trans (cong (λ z → r₁ ∘ z ∘ f) retEq) retEq₁ }
+    { r = r₁ ∘ r ; determinationProof = trans (cong (λ z → r₁ ∘ z ∘ f) retEq) retEq₁ }
 
 record Idempotent {A : Set } (e : A -> A) : Set where
   field
