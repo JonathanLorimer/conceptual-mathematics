@@ -179,87 +179,92 @@ record Choice {A B C : Set} (h : A -> C) (g : B -> C) : Set where
 HasSection : {A B : Set} (f : A -> B) -> Set
 HasSection = Choice id
 
--- choiceForEverySection :
---   {A B : Set} -> {f : A -> B} ->
---   HasSection f ->
---   ∀ {T : Set} -> (y : T -> B) -> Σ (T -> A) (λ (x : T -> A) -> f ∘ x ≡ y)
--- choiceForEverySection {f = f} section {T} y =
---   let open Choice section
---       sec = s
---       secEq = choiceProof
---   in s ∘ y , \a -> (
---         begin
---         (f ∘ (s ∘ y)) a
---         ≡⟨⟩
---         ((f ∘ s) ∘ y) a
---         ≡⟨ (secEq a) ⟩
---         y a
---         ∎)
+choiceForEverySection :
+  {A B : Set} -> {f : A -> B} ->
+  HasSection f ->
+  ∀ {T : Set} -> (y : T -> B) -> Σ (T -> A) (λ (x : T -> A) -> (t : T) -> (f ∘ x) t ≡ y t)
+choiceForEverySection {f = f} section {T} y =
+  let open Choice section
+      sec = s
+      secEq = choiceProof
+  in s ∘ y , \a ->
+        begin
+        (f ∘ (s ∘ y)) a
+        ≡⟨⟩
+        ((f ∘ s) ∘ y) a
+        ≡⟨ secEq (y a) ⟩
+        y a
+        ∎
 
--- determinationForEveryRetraction :
---   {A B : Set} -> {f : A -> B} ->
---   HasRetract f ->
---   ∀ {T : Set} -> (y : A -> T) -> Σ (B -> T) (λ (x : B -> T) -> x ∘ f ≡ y)
--- determinationForEveryRetraction {f = f} ret {T} y =
---   let open Determination ret
---       r' = r
---       retEq = determinationProof
---   in y ∘ r , (
---        begin
---        (y ∘ r) ∘ f
---        ≡⟨⟩
---        y ∘ (r ∘ f)
---        ≡⟨ cong (y ∘_) retEq ⟩
---        y
---        ∎
---         )
+determinationForEveryRetraction :
+  {A B : Set} -> {f : A -> B} ->
+  HasRetract f ->
+  ∀ {T : Set} -> (y : A -> T) -> Σ (B -> T) (λ (x : B -> T) -> (t : A) -> (x ∘ f) t ≡ y t)
+determinationForEveryRetraction {f = f} ret {T} y =
+  let open Determination ret
+      r' = r
+      retEq = determinationProof
+  in y ∘ r , \a ->
+       begin
+       ( (y ∘ r) ∘ f ) a
+       ≡⟨⟩
+       ( y ∘ (r ∘ f) ) a
+       ≡⟨ cong y (retEq a)  ⟩
+       y a
+       ∎
 
--- monomorphicChoice :
---   {A B : Set} -> {f : A -> B} ->
---   HasRetract f ->
---   (∀ {T : Set} -> {x1 x2 : T -> A} -> (f ∘ x1 ≡ f ∘ x2) -> x1 ≡ x2)
--- monomorphicChoice {f = f} retF {x1 = x1} {x2 = x2} eq =
---   let open Determination retF
---       r = r
---       retEq = determinationProof
---   in
---   begin
---   x1
---   ≡⟨ sym $ cong (_∘ x1) retEq ⟩
---   (r ∘ f) ∘ x1
---   ≡⟨ cong (r ∘_) eq ⟩
---   (r ∘ f) ∘ x2
---   ≡⟨ cong (_∘ x2) retEq ⟩
---   x2
---   ∎
+monomorphicChoice :
+  {A B : Set} {f : A -> B} {T : Set} {x1 x2 : T -> A} ->
+  HasRetract f ->
+  (t : T) ->
+  (f ∘ x1) t ≡ (f ∘ x2) t
+  -> x1 t ≡ x2 t
+monomorphicChoice {f = f} {x1 = x1} {x2 = x2} retF t eq =
+  let open Determination retF
+      r = r
+      retEq = determinationProof
+  in
+  begin
+  x1 t
+  ≡⟨ sym $ retEq (x1 t) ⟩
+  ((r ∘ f) ∘ x1) t
+  ≡⟨ cong r eq ⟩
+  ((r ∘ f) ∘ x2) t
+  ≡⟨ retEq (x2 t) ⟩
+  x2 t
+  ∎
 
--- epimorphicDetermination :
---   {A B : Set} -> {f : A -> B} ->
---   HasSection f ->
---   (∀ {T : Set} -> {t1 t2 : B -> T} -> (t1 ∘ f ≡ t2 ∘ f) -> t1 ≡ t2)
--- epimorphicDetermination {f = f} secF {t1 = t1} {t2 = t2} eq =
---   let open Choice secF
---       s = s
---       secEq = choiceProof
---   in
---   begin
---   t1
---   ≡⟨ sym $ cong (t1 ∘_) secEq ⟩
---   t1 ∘ (f ∘ s)
---   ≡⟨ cong (_∘ s) eq ⟩
---   (t2 ∘ f) ∘ s
---   ≡⟨ cong (t2 ∘_) secEq ⟩
---   t2
---   ∎
+epimorphicDetermination :
+  {A B : Set} {f : A -> B} {T : Set} -> {t1 t2 : B -> T} ->
+  HasSection f ->
+  ((a : A) -> (t1 ∘ f) a ≡ (t2 ∘ f) a) ->
+  (b : B) ->
+  t1 b ≡ t2 b
+epimorphicDetermination {f = f} {t1 = t1} {t2 = t2} secF eq b =
+  let open Choice secF
+      s = s
+      secEq = choiceProof
+  in
+  begin
+  t1 b
+  ≡⟨ sym $ cong t1 $ secEq b ⟩
+  (t1 ∘ (f ∘ s)) b
+  ≡⟨ eq (s b) ⟩
+  ((t2 ∘ f) ∘ s) b
+  ≡⟨ cong t2 $ secEq b ⟩
+  t2 b
+  ∎
 
--- retractionComposition :
---   {A B C : Set} -> {f : A -> B} -> {g : B -> C} ->
---   HasRetract f ->
---   HasRetract g ->
---   HasRetract (g ∘ f)
--- retractionComposition {f = f} record { r = r₁ ; determinationProof = retEq₁ } record { r = r ; determinationProof = retEq } =
---   record
---     { r = r₁ ∘ r ; determinationProof = trans (cong (λ z → r₁ ∘ z ∘ f) retEq) retEq₁ }
+retractionComposition :
+  {A B C : Set} -> {f : A -> B} -> {g : B -> C} ->
+  HasRetract f ->
+  HasRetract g ->
+  HasRetract (g ∘ f)
+retractionComposition {f = f} record { r = r₁ ; determinationProof = retEq₁ } record { r = r ; determinationProof = retEq } =
+  record
+    { r = r₁ ∘ r
+    ; determinationProof = \a -> trans (cong r₁ $ retEq (f a)) (retEq₁ a)
+    }
 
 record Idempotent {A : Set } (e : A -> A) : Set where
   field
