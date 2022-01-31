@@ -359,20 +359,8 @@ fInverse (hasIso-to-Iso iso) = f-inverse-proof-r iso
 bInverse (hasIso-to-Iso iso) = f-inverse-proof-l iso
 
 
--- just the category laws, I don't feel bad about postulating these
-postulate
-  trans-reflex-iso : {A B : Set} -> (iso : Isomorphism A B) -> iso ≡ transitiveIso iso reflexiveIso
-  trans-iso
-      : {A B C D : Set}
-      -> (isoAB : Isomorphism A B)
-      -> (isoBC : Isomorphism B C)
-      -> (isoCD : Isomorphism C D)
-      -> transitiveIso isoAB (transitiveIso isoBC isoCD) ≡ transitiveIso (transitiveIso isoAB isoBC) isoCD
-  sym-bwd-id : {A B : Set} -> (iso : Isomorphism A B) -> reflexiveIso ≡ transitiveIso (symmetricIso iso) iso
-
 sym-sym-id : {A B : Set} -> (iso : Isomorphism A B) -> iso ≡ symmetricIso (symmetricIso iso)
 sym-sym-id iso = refl
-
 
 postulate
   extensionality : {S : Set}{T : S -> Set}
@@ -389,8 +377,8 @@ iso-ext
     -> ((b : B) -> backward f-iso b ≡ backward g-iso b)
     -> f-iso ≡ g-iso
 iso-ext
-  {f-iso = record { forward = forward₁ ; backward = backward₁ ; fInverse = fInverse₁ ; bInverse = bInverse₁ }}
-  {g-iso = record { forward = forward ; backward = backward ; fInverse = fInverse ; bInverse = bInverse }}
+  {f-iso = record { fInverse = fInverse₁ ; bInverse = bInverse₁ }}
+  {g-iso = record { fInverse = fInverse  ; bInverse = bInverse }}
   f-eq b-eq rewrite extensionality f-eq
                   | extensionality b-eq
                   | extensionality (\a -> uip (fInverse a) (fInverse₁ a))
@@ -399,7 +387,7 @@ iso-ext
 
 
 sym-fwd-id : {A B : Set} -> (iso : Isomorphism A B) -> reflexiveIso ≡ transitiveIso iso (symmetricIso iso)
-sym-fwd-id iso = iso-ext (sym ∘ bInverse iso) $ \b ->
+sym-fwd-id iso = iso-ext (sym ∘ bInverse iso) \b ->
   begin
     backward reflexiveIso b
   ≡⟨⟩
@@ -411,6 +399,28 @@ sym-fwd-id iso = iso-ext (sym ∘ bInverse iso) $ \b ->
   ≡⟨⟩
     backward (transitiveIso iso (symmetricIso iso)) b
   ∎
+
+sym-bwd-id : {A B : Set} -> (iso : Isomorphism A B) -> reflexiveIso ≡ transitiveIso (symmetricIso iso) iso
+sym-bwd-id iso =
+  begin
+    reflexiveIso
+  ≡⟨ sym-fwd-id (symmetricIso iso) ⟩
+    transitiveIso (symmetricIso iso) (symmetricIso (symmetricIso iso))
+  ≡⟨ cong (transitiveIso (symmetricIso iso)) $ sym $ sym-sym-id iso ⟩
+    transitiveIso (symmetricIso iso) iso
+  ∎
+
+trans-reflex-iso : {A B : Set} -> (iso : Isomorphism A B) -> iso ≡ transitiveIso iso reflexiveIso
+trans-reflex-iso _ = iso-ext (\a -> refl) (\b -> refl)
+
+trans-iso
+    : {A B C D : Set}
+    -> (isoAB : Isomorphism A B)
+    -> (isoBC : Isomorphism B C)
+    -> (isoCD : Isomorphism C D)
+    -> transitiveIso isoAB (transitiveIso isoBC isoCD) ≡ transitiveIso (transitiveIso isoAB isoBC) isoCD
+trans-iso _ _ _ = iso-ext (\a -> refl) (\b -> refl)
+
 
 -- This is not an iff; the number of autos are the same as the number of isos
 -- ONLY IF it has isos in the first place!
@@ -435,6 +445,17 @@ autoIsos {A} {B} {f} f-iso =
                 ≡⟨ sym $ trans-reflex-iso a ⟩
                   a
                 ∎
-             ; bInverse = ?
+             ; bInverse = \a ->
+               let iso-of-f = hasIso-to-Iso f-iso
+                in
+                begin
+                  transitiveIso (transitiveIso a iso-of-f) (symmetricIso iso-of-f)
+                ≡⟨ sym $ trans-iso a iso-of-f (symmetricIso iso-of-f) ⟩
+                  transitiveIso a (transitiveIso iso-of-f $ symmetricIso iso-of-f)
+                ≡⟨ cong (transitiveIso a) $ sym $ sym-fwd-id iso-of-f ⟩
+                  transitiveIso a reflexiveIso
+                ≡⟨ sym $ trans-reflex-iso a ⟩
+                  a
+                ∎
              }
 
