@@ -368,8 +368,49 @@ postulate
       -> (isoBC : Isomorphism B C)
       -> (isoCD : Isomorphism C D)
       -> transitiveIso isoAB (transitiveIso isoBC isoCD) ≡ transitiveIso (transitiveIso isoAB isoBC) isoCD
-  sym-fwd-id : {A B : Set} -> (iso : Isomorphism A B) -> reflexiveIso ≡ transitiveIso iso (symmetricIso iso)
   sym-bwd-id : {A B : Set} -> (iso : Isomorphism A B) -> reflexiveIso ≡ transitiveIso (symmetricIso iso) iso
+
+sym-sym-id : {A B : Set} -> (iso : Isomorphism A B) -> iso ≡ symmetricIso (symmetricIso iso)
+sym-sym-id iso = refl
+
+
+postulate
+  extensionality : {S : Set}{T : S -> Set}
+                   {f g : (x : S) -> T x} ->
+                   ((x : S) -> f x ≡ g x) ->
+                   f ≡ g
+
+uip : {A : Set} -> {x y : A} -> (p q : x ≡ y) -> p ≡ q
+uip refl refl = refl
+
+iso-ext
+    : {A B : Set} {f-iso g-iso : Isomorphism A B}
+    -> ((a : A) -> forward f-iso a ≡ forward g-iso a)
+    -> ((b : B) -> backward f-iso b ≡ backward g-iso b)
+    -> f-iso ≡ g-iso
+iso-ext
+  {f-iso = record { forward = forward₁ ; backward = backward₁ ; fInverse = fInverse₁ ; bInverse = bInverse₁ }}
+  {g-iso = record { forward = forward ; backward = backward ; fInverse = fInverse ; bInverse = bInverse }}
+  f-eq b-eq rewrite extensionality f-eq
+                  | extensionality b-eq
+                  | extensionality (\a -> uip (fInverse a) (fInverse₁ a))
+                  | extensionality (\a -> uip (bInverse a) (bInverse₁ a))
+                  = refl
+
+
+sym-fwd-id : {A B : Set} -> (iso : Isomorphism A B) -> reflexiveIso ≡ transitiveIso iso (symmetricIso iso)
+sym-fwd-id iso = iso-ext (sym ∘ bInverse iso) $ \b ->
+  begin
+    backward reflexiveIso b
+  ≡⟨⟩
+    b
+  ≡⟨ sym $ bInverse iso b ⟩
+    (backward iso ∘ forward iso) b
+  ≡⟨⟩
+    (backward iso ∘ backward (symmetricIso iso)) b
+  ≡⟨⟩
+    backward (transitiveIso iso (symmetricIso iso)) b
+  ∎
 
 -- This is not an iff; the number of autos are the same as the number of isos
 -- ONLY IF it has isos in the first place!
