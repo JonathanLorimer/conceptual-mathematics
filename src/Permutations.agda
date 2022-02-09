@@ -8,7 +8,7 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym; trans)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _∎; step-≡)
 open import Function.Reasoning
-open import Isomorphisms
+open import Old.Isomorphisms
 
 record Category : Set where
   infix 6 _~>_
