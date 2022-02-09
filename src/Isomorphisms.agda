@@ -277,6 +277,59 @@ idempotentSplit :
 idempotentSplit {s = s} {r = r} proof rewrite proof =
   record { idempotentProof = refl }
 
+-- examples
+-- f : Int -> Bool
+-- s : Bool -> Int
+-- f = isEven
+-- s = toBinary
+-- isEven . toBinary = id
+
+open import Agda.Builtin.Nat
+open import Data.String
+
+isOdd : Nat -> Bool
+isOdd zero = false
+isOdd (suc n) = not $ isOdd n
+
+toBinary : Bool -> Nat
+toBinary false = zero
+toBinary true = suc zero
+
+sectionExample : HasSection (isOdd)
+Choice.s sectionExample = toBinary
+Choice.choiceProof sectionExample = λ {true -> refl; false -> refl}
+
+-- sectionExample2 : HasSection (toBinary)
+-- Choice.s sectionExample2 = isOdd
+-- Choice.choiceProof sectionExample2 zero = refl
+-- Choice.choiceProof sectionExample2 (suc zero) = refl
+-- Choice.choiceProof sectionExample2 (suc (suc a)) =
+
+JSON = String
+
+data World : Set where
+  WorldLiteral : World
+
+record Request : Set where
+  field hello : World
+
+open import Data.Maybe
+
+parseJson : JSON -> Maybe Request
+parseJson "{ hello: world }" = just $ record { hello = WorldLiteral }
+parseJson _ = nothing
+
+serializeJson : Maybe Request -> JSON
+serializeJson (just record { hello = WorldLiteral }) = "{ hello: world }"
+serializeJson nothing = "{}"
+
+retractExample : HasRetract serializeJson
+Determination.r retractExample = parseJson
+Determination.determinationProof retractExample =
+  λ
+    { nothing -> refl
+    ; (just (record {hello = WorldLiteral})) -> refl
+    }
 
 -- 4. Isomorphisms and automorphisms
 
@@ -308,6 +361,57 @@ record HasIsomorphism {A B : Set} (f : A -> B) : Set where
     ∎
 
 open HasIsomorphism
+
+isomorphismComposition :
+  {A B C : Set} -> {f : A -> B} -> {g : B -> C} ->
+  HasIsomorphism f ->
+  HasIsomorphism g ->
+  HasIsomorphism (g ∘ f)
+isomorphismComposition
+  {f = f}
+  {g = g}
+  record { f-section = f-section₁ ; f-retraction = f-retraction₁ ; iso-proof = iso-proof₁ }
+  record { f-section = f-section ; f-retraction = f-retraction ; iso-proof = iso-proof } =
+  let gs = f-section .Choice.s
+      fs = f-section₁ .Choice.s
+      gSecProof = f-section .Choice.choiceProof
+      fSecProof = f-section₁ .Choice.choiceProof
+      gr = Determination.r f-retraction
+      fr = Determination.r f-retraction₁
+      gRetProof = Determination.determinationProof f-retraction
+      fRetProof = Determination.determinationProof f-retraction₁
+  in record { f-section =
+              chooses
+                (fs ∘ gs)
+                λ c →
+                  begin
+                  g (f (fs (gs c)))
+                  ≡⟨ cong g (fSecProof (gs c)) ⟩
+                  g (f-section .Choice.s c)
+                  ≡⟨ gSecProof c ⟩
+                  c
+                  ∎
+            ; f-retraction =
+              determines
+                (fr ∘ gr)
+                λ a →
+                  begin
+                  (fr ∘ gr ∘ g ∘ f) a
+                  ≡⟨ cong fr (gRetProof (f a))⟩
+                  (fr ∘ f) a
+                  ≡⟨ fRetProof a ⟩
+                  a
+                  ∎
+            ; iso-proof =
+                λ b →
+                begin
+                (fs ∘ gs) b
+                ≡⟨ iso-proof₁ (gs b) ⟩
+                (fr ∘ gs) b
+                ≡⟨ cong fr (iso-proof b)⟩
+                (fr ∘ gr) b
+                ∎
+            }
 
 ex10 : {A B C : Set} -> {f : A -> B} -> {g : B -> C} -> HasIsomorphism f -> HasIsomorphism g -> HasIsomorphism (g ∘ f)
 ex10 {f = f} {g} f-iso g-iso =
