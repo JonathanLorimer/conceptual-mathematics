@@ -36,11 +36,24 @@ record Category : Set where
     -- Laws
     id-r : {A B : Obj} (f : A ~> B) → f ∘ id ≈ f
     id-l : {A B : Obj} (f : A ~> B) → id ∘ f ≈ f
-    ∘-assoc : {A B C D : Obj} (f : A ~> B) → (g : B ~> C) → (h : C ~> D) → h ∘ (g ∘ f) ≈ (h ∘ g) ∘ f
+    ∘-assoc
+      : {A B C D : Obj}
+      → (h : C ~> D)
+      → (g : B ~> C)
+      → (f : A ~> B)
+      → h ∘ (g ∘ f) ≈ (h ∘ g) ∘ f
 
   -- "Forward" composition
   _>>_ : {A B C : Obj} → A ~> B → B ~> C → A ~> C
   _>>_ f g = g ∘ f
+
+  >>-assoc
+      : {A B C D : Obj}
+      → (f : A ~> B)
+      → (g : B ~> C)
+      → (h : C ~> D)
+      → f >> (g >> h) ≈ (f >> g) >> h
+  >>-assoc f g h = IsEquivalence.sym ≈-equiv (∘-assoc h g f)
 
   setoid : {X Y : Obj} → Setoid _ _
   Setoid.Carrier (setoid {X} {Y}) = X ~> Y
@@ -49,6 +62,7 @@ record Category : Set where
 
   module HomReasoning {A B : Obj} where
     open SetoidR (setoid {A} {B}) public
+    open IsEquivalence (≈-equiv {A} {B}) public
 
 open Category
 
