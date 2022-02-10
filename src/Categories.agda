@@ -27,6 +27,12 @@ record Category : Set where
     id : {A : Obj} → A ~> A
     _∘_ : {A B C : Obj} → B ~> C → A ~> B → A ~> C
 
+    ∘-cong
+        : ∀ {A B C} {g g' : B ~> C} {f f' : A ~> B}
+        → g ≈ g'
+        → f ≈ f'
+        → g ∘ f ≈ g' ∘ f'
+
     -- Laws
     id-r : {A B : Obj} (f : A ~> B) → f ∘ id ≈ f
     id-l : {A B : Obj} (f : A ~> B) → id ∘ f ≈ f
@@ -64,19 +70,9 @@ infix 5 _[_∘_]
 _[_∘_] : (C : Category) -> {X Y Z : Obj C} -> C [ Y , Z ] -> C [ X , Y ] -> C [ X , Z ]
 _[_∘_] = _∘_
 
--- Same, but for double composition
-infix 5 _[_∘_∘_]
-_[_∘_∘_] : (C : Category) -> {X Y Z W : Obj C} -> C [ Z , W ] → C [ Y , Z ] -> C [ X , Y ] -> C [ X , W ]
-C [ h ∘ g ∘ f ] = C [ h ∘ C [ g ∘ f ] ]
-
 -- Notational convenience for "forward" composition.
 -- eg we can talk about a set composition `SET [ length >> show ] : SET [ List A , String ]`
 infix 5 _[_>>_]
 _[_>>_] : (C : Category) -> {X Y Z : Obj C} -> C [ X , Y ] -> C [ Y , Z ] -> C [ X , Z ]
 _[_>>_] = _>>_
-
--- Same, but for double
-infix 5 _[_>>_>>_]
-_[_>>_>>_] : (C : Category) -> {X Y Z W : Obj C} -> C [ X , Y ] -> C [ Y , Z ] -> C [ Z , W ] → C [ X , W ]
-C [ f >> g >> h ] = C [ f >> C [ g >> h ] ]
 

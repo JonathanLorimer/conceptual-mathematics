@@ -19,6 +19,7 @@ IsEquivalence.sym   (≈-equiv SET) f a   = Eq.sym (f a)
 IsEquivalence.trans (≈-equiv SET) f g a = Eq.trans (f a) (g a)
 id      SET         = \a → a
 _∘_     SET         = \g f a → g (f a)
+∘-cong  SET {f' = f'} gg' ff' a rewrite ff' a | gg' (f' a) = refl
 id-r    SET _ _     = refl
 id-l    SET _ _     = refl
 ∘-assoc SET _ _ _ _ = refl
