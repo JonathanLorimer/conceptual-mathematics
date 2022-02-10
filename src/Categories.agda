@@ -2,32 +2,26 @@
 
 module Categories where
 
-import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; refl; cong; sym; trans)
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _∎; step-≡)
+open import Relation.Binary.Structures using (IsEquivalence)
+open import Relation.Binary.Bundles using (Setoid)
+open import Relation.Binary
+import Relation.Binary.Reasoning.Setoid as SetoidR
 
--- open import Relation.Binary.Structures using (IsEquivalence)
--- open import Relation.Binary.Bundles using (Setoid)
-
-infix 2 _≈_
-_≈_ = _≡_
 
 record Category : Set where
   infix 6 _~>_
+  infix 2 _≈_
 
   field
     -- Objects and arrows in the category
     Obj : Set
     _~>_ : (A B : Obj) → Set
 
-    -- One day soon we will want to loosen the meaning of equality. But that
-    -- day is not this day and I don't know how to do this ergonomically.
+    -- The meaning of equality of morphisms
+    _≈_ : {A B : Obj} → A ~> B → A ~> B → Set
 
-    -- -- The meaning of equality of morphisms
-    -- _≈_ : {A B : Obj} → A ~> B → A ~> B → Set
-
-    -- -- _≈_ forms a equivalence relationship
-    -- ≈-equiv : {A B : Obj} → IsEquivalence (_≈_ {A} {B})
+    -- _≈_ forms a equivalence relationship
+    ≈-equiv : {A B : Obj} → IsEquivalence (_≈_ {A} {B})
 
     -- Id and composition
     id : {A : Obj} → A ~> A
@@ -42,13 +36,20 @@ record Category : Set where
   _>>_ : {A B C : Obj} → A ~> B → B ~> C → A ~> C
   _>>_ f g = g ∘ f
 
-  -- setoid : {X Y : Obj} → Setoid _ _
-  -- Setoid.Carrier (setoid {X} {Y}) = X ~> Y
-  -- Setoid._≈_ setoid  = _≈_
-  -- Setoid.isEquivalence setoid = ≈-equiv
+  setoid : {X Y : Obj} → Setoid _ _
+  Setoid.Carrier (setoid {X} {Y}) = X ~> Y
+  Setoid._≈_ setoid  = _≈_
+  Setoid.isEquivalence setoid = ≈-equiv
+
+  module HomReasoning {A B : Obj} where
+    open SetoidR (setoid {A} {B}) public
 
 open Category
 
+
+infix 2 _[_≈_]
+_[_≈_] : (r : Category) {A B : Obj r} → (r ~> A) B → (r ~> A) B → Set
+_[_≈_] = _≈_
 
 -- Notational convenience for arrows in a category. Helpful when dealing with
 -- multiple categories at once.
