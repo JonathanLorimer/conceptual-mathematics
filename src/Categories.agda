@@ -18,7 +18,11 @@ record Category : Set where
     _~>_ : (A B : Obj) → Set
 
     -- The meaning of equality of morphisms
-    _≈_ : {A B : Obj} → A ~> B → A ~> B → Set
+    _≈_
+      : {A B : Obj}
+      → A ~> B
+      → A ~> B
+      → Set
 
     -- _≈_ forms a equivalence relationship
     ≈-equiv : {A B : Obj} → IsEquivalence (_≈_ {A} {B})
