@@ -3,32 +3,32 @@
 module Category.PERM where
 
 open import Categories
-open Category
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; cong; sym; trans)
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _∎; step-≡)
 open import Relation.Binary.Structures
-
-import Isomorphisms
-open Isomorphisms.Isomorphism
 open import Category.SET
-
+import Isomorphisms
 open import Isomorphisms SET
+
+open Isomorphisms.Isomorphism
+open Category
+open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _∎; step-≡)
+
 
 
 record PermObj : Set where
   field
-    permCarrier : Set
-    permAuto : Automorphism permCarrier
+    carrier : Set
+    auto : Automorphism carrier
 
 open Isomorphism
 open PermObj
 
 record PermArrow ( A B : PermObj ) : Set where
   field
-    permMap : permCarrier A → permCarrier B
-    permArrowLaw
-      : (a : permCarrier A)
-      → permMap (forward (permAuto A) a) ≡ forward (permAuto B) (permMap a)
+    map : carrier A → carrier B
+    map-commutes
+      : (a : carrier A)
+      → map (forward (auto A) a) ≡ forward (auto B) (map a)
 
 open PermArrow
 
@@ -36,17 +36,17 @@ open PermArrow
 PERM : Category
 Obj     PERM = PermObj
 _~>_    PERM = PermArrow
-_≈_     PERM f g = forall a → permMap f a ≡ permMap g a
+_≈_     PERM f g = forall a → map f a ≡ map g a
 IsEquivalence.refl  (≈-equiv PERM) _     = refl
 IsEquivalence.sym   (≈-equiv PERM) f a   = Eq.sym (f a)
 IsEquivalence.trans (≈-equiv PERM) f g a = Eq.trans (f a) (g a)
-permMap      (id PERM) = id SET
-permArrowLaw (id PERM) a = refl
-permMap      ((PERM ∘ g) f) a = permMap g (permMap f a)
-permArrowLaw (_∘_ PERM {A} {B} {C}
-  g@record { permMap = gmap ; permArrowLaw = glaw }
-  f@record { permMap = fmap ; permArrowLaw = flaw }) a =
-  let perm t = forward (permAuto t)
+map      (id PERM) = id SET
+map-commutes (id PERM) a = refl
+map      ((PERM ∘ g) f) a = map g (map f a)
+map-commutes (_∘_ PERM {A} {B} {C}
+  g@record { map = gmap ; map-commutes = glaw }
+  f@record { map = fmap ; map-commutes = flaw }) a =
+  let perm t = forward (auto t)
   in
   begin
     gmap (fmap (perm A a))
@@ -57,7 +57,7 @@ permArrowLaw (_∘_ PERM {A} {B} {C}
   ∎
 ∘-cong  PERM {f' = f'} gg' ff' a
   rewrite ff' a
-        | gg' (permMap f' a)
+        | gg' (map f' a)
         = refl
 id-r    PERM f a = refl
 id-l    PERM f a = refl
