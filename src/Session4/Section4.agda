@@ -58,8 +58,15 @@ module _ where
   fInverse ex1 = solve 1 (\a → a :* con half :+ a :* con half := a) Eq.refl
   bInverse ex1 = solve 1 (\a → (a :+ a) :* con half := a) Eq.refl
 
+  module Ex3 where
+    -- a is not a MON morphism, since (a + b) + 1 /≡  a + 1 + b + 1
+    -- likewise d
+    -- e is not, because we'd need -(a * b) = -a * -b
+    -- b is a morphism. but is it invertible? no; the codomain has negative numbers
+    -- but in c those are restricted, thus c has the isomorphim
 
-module _ where
+
+module Ex2 where
 
   data Oddity : Set where
     even : Oddity
