@@ -7,7 +7,6 @@ open import Relation.Binary.Bundles using (Setoid)
 open import Relation.Binary
 import Relation.Binary.Reasoning.Setoid as SetoidR
 
-
 record Category : Set where
   infix 6 _~>_
   infix 2 _≈_
