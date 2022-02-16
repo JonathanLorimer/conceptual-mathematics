@@ -62,7 +62,7 @@ preserves-≈ (_∘_ MON g f) a a' eq =
     map g' (map f' a)
   ∎
   where
-    open SetoidR (setoid C) public
+    open SetoidR (setoid C)
 id-r    MON {B = B} f a = B .refl
 id-l    MON {B = B} f a = B .refl
 ∘-assoc MON {D = D} h g f a = D .refl

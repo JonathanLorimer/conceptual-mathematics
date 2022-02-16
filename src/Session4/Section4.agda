@@ -59,11 +59,33 @@ module _ where
   bInverse ex1 = solve 1 (\a → (a :+ a) :* con half := a) Eq.refl
 
   module Ex3 where
-    -- a is not a MON morphism, since (a + b) + 1 /≡  a + 1 + b + 1
-    -- likewise d
-    -- e is not, because we'd need -(a * b) = -a * -b
-    -- b is a morphism. but is it invertible? no; the codomain has negative numbers
-    -- but in c those are restricted, thus c has the isomorphim
+    mQ : ℚ → ℚ
+    mQ x = - x
+
+    open Isomorphism
+
+    m : ratPlus ~> ratPlus
+    MonArr.map m = mQ
+    MonArr.commutes m a b =
+      begin
+        - (a + b)
+      ≡⟨ neg-distrib-+ a b ⟩
+        - a + - b
+      ∎
+      where open Eq.≡-Reasoning
+    MonArr.preserves-≈ m a a' x rewrite x = Eq.refl
+
+    open import Data.Nat using (zero; suc)
+    neg-neg : ∀ a → - (- a) ≡ a
+    neg-neg (mkℚ (+_ zero) denominator-1 isCoprime) = Eq.refl
+    neg-neg (mkℚ +[1+ n ] denominator-1 isCoprime) = Eq.refl
+    neg-neg (mkℚ (Data.Integer.-[1+_] n) denominator-1 isCoprime) = Eq.refl
+
+    minv : Isomorphism ratPlus ratPlus
+    forward minv = m
+    backward minv = m
+    fInverse minv = neg-neg
+    bInverse minv = neg-neg
 
 
 module Ex2 where
